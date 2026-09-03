@@ -6,6 +6,8 @@
     <title>Ping Pong Live Scoreboard</title>
     <!-- This library generates QR codes locally and offline on the phone -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- WebRTC peer-to-peer connections via the free public PeerJS broker -->
+    <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -37,6 +39,10 @@
         .winner-text { font-size: 2.5rem; color: #f1c40f; font-weight: bold; text-align: center; margin-bottom: 30px; }
         hr { border: 0; height: 1px; background: #34495e; margin: 15px 0; width: 100%; }
         #qrcode { background: white; padding: 10px; border-radius: 8px; display: inline-block; margin-top: 10px; }
+        .setup-step { display: none; flex-direction: column; gap: 12px; align-items: center; width: 100%; }
+        .room-code { font-size: 2.2rem; font-weight: bold; letter-spacing: 6px; color: #f1c40f; }
+        .btn-back { background: none; color: #aaa; text-decoration: underline; font-weight: normal; padding: 5px; width: auto; font-size: 1rem; }
+        #codeInput { letter-spacing: 6px; text-align: center; font-size: 1.5rem; }
     </style>
 </head>
 <body>
@@ -44,22 +50,28 @@
 <!-- START SCREEN -->
 <div id="setupScreen" class="setup-screen">
     <h2>Ping Pong Match</h2>
-    <input type="text" id="nameInput" placeholder="Your name" maxlength="12">
-    <hr>
-    <button id="btnCreate" onclick="createRoom()" style="background-color: #3498db; color: white;">Start Game</button>
 
-    <div id="qrContainer" style="display:none; margin: 15px 0; text-align: center; width: 100%;">
-        <p style="color: #3498db; font-weight: bold; margin-bottom: 10px;">Opponent must scan this QR code:</p>
+    <div id="roleChoice" class="setup-step" style="display: flex;">
+        <input type="text" id="nameInput" placeholder="Your name" maxlength="12">
+        <hr>
+        <button onclick="startHostFlow()" style="background-color: #3498db; color: white;">Start Game</button>
+        <button onclick="showJoinScreen()" style="background-color: #9b59b6; color: white;">Join Game</button>
+    </div>
+
+    <div id="hostScreen" class="setup-step">
         <!-- The library draws the QR code right here -->
         <div id="qrcode"></div>
-
-        <p style="margin: 15px 0 5px; color: #aaa;">OR</p>
-        <p style="color: #9b59b6; font-weight: bold; margin-bottom: 8px;">Enter link manually:</p>
-        <div style="display: flex; gap: 8px; align-items: center;">
-            <div id="joinLinkDisplay" style="flex: 1; word-break: break-all; text-align: left; font-size: 0.85rem; color: #ddd; background-color: #2c3e50; padding: 10px; border-radius: 8px;"></div>
-            <button type="button" onclick="shareJoinLink()" title="Share" style="width: auto; padding: 10px 14px; font-size: 0.9rem;">📤</button>
-        </div>
+        <div id="roomCodeDisplay" class="room-code"></div>
+        <button type="button" onclick="shareJoinLink()" title="Share" style="width: auto; padding: 10px 14px; font-size: 0.9rem;">📤 Share</button>
+        <button type="button" onclick="cancelHostAndGoBack()" class="btn-back">Back</button>
     </div>
+
+    <div id="joinScreen" class="setup-step">
+        <input type="text" id="codeInput" inputmode="numeric" pattern="[0-9]*" placeholder="Enter code" maxlength="6">
+        <button onclick="submitJoin()" style="background-color: #9b59b6; color: white;">Join</button>
+        <button type="button" onclick="cancelJoinAndGoBack()" class="btn-back">Back</button>
+    </div>
+
     <h3 id="statusText" style="margin-top: 15px; padding: 0 10px;"></h3>
 </div>
 
@@ -102,11 +114,10 @@
     let setsA = 0;  let setsB = 0;
     let nameA = "Player A"; let nameB = "Player B";
     let matchFinished = false;
-    let myRole = ''; let ws; let roomCode = '';
+    let myRole = ''; let peer; let conn; let roomCode = ''; let joinUrl = '';
     let wakeLock = null;
 
-    // REPLACE THIS WITH THE LOCAL IP OF YOUR PHP SERVER (e.g. ws://192.168.1.50:8080)
-    const WEBSOCKET_SERVER = "ws://192.168.0.101:9999";
+    const ICE_SERVERS = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 
     async function requestWakeLock() {
         try {
@@ -124,90 +135,87 @@
 
     window.addEventListener('load', () => {
         const urlParams = new URLSearchParams(window.location.search);
-        const autoRoom = urlParams.get('g');
+        const autoCode = urlParams.get('g');
 
-        if (autoRoom) {
-            roomCode = autoRoom;
-            myRole = 'B';
-
-            document.getElementById('btnCreate').style.display = 'none';
-
-            document.getElementById('statusText').innerText = "Scan successful! Enter your name. Starting in 5 seconds...";
-            document.getElementById('statusText').style.color = "#2ecc71";
-
-            setTimeout(() => {
-                const inputName = document.getElementById('nameInput').value.trim();
-                if(inputName) nameB = inputName;
-
-                initWebSocket(() => {
-                    ws.send(JSON.stringify({
-                        type: "sync", room: roomCode, sender: 'B',
-                        nameA, nameB, scoreA, scoreB, setsA, setsB, matchFinished
-                    }));
-                    startGame();
-                });
-            }, 5000);
+        if (autoCode) {
+            showJoinScreen(autoCode);
         }
     });
 
-    function initWebSocket(callback) {
-        ws = new WebSocket(WEBSOCKET_SERVER);
-        ws.onopen = () => callback();
-        ws.onmessage = (event) => {
-            try {
-                const data = JSON.parse(event.data);
-
-                if (data.error === "game_in_progress") {
-                    const status = document.getElementById('statusText');
-                    status.innerText = "❌ Access denied: Game already started!";
-                    status.style.color = "#e74c3c";
-                    ws.close();
-                    return;
-                }
-
-                if (data.type === "opponent_left" && data.room === roomCode) {
-                    alert("The opponent has left the game.");
-                    returnToSetup();
-                    return;
-                }
-
-                if (data.room === roomCode && data.sender !== myRole) {
-                    if (data.type === "sync" || data.type === "update") {
-                        scoreA = data.scoreA; scoreB = data.scoreB;
-                        setsA = data.setsA;   setsB = data.setsB;
-                        // Only adopt the name of the OTHER player –
-                        // our own, self-entered name stays untouched.
-                        if (myRole === 'A') { nameB = data.nameB; } else { nameA = data.nameA; }
-                        matchFinished = data.matchFinished;
-
-                        if (data.type === "sync") {
-                            startGame();
-                            sendData(); // immediately mirror back our own (real) name
-                        } else {
-                            updateDisplay();
-                        }
-                    }
-                }
-            } catch (e) {}
-        };
+    function showStep(stepId) {
+        document.querySelectorAll('.setup-step').forEach(el => el.style.display = 'none');
+        document.getElementById(stepId).style.display = 'flex';
+        document.getElementById('statusText').innerText = '';
     }
 
-    function createRoom() {
+    function showJoinScreen(prefillCode) {
+        showStep('joinScreen');
+        if (prefillCode) {
+            document.getElementById('codeInput').value = prefillCode;
+        }
+    }
+
+    function cancelHostAndGoBack() {
+        if (conn) { conn.close(); conn = null; }
+        if (peer) { peer.destroy(); peer = null; }
+        roomCode = ''; joinUrl = '';
+        showStep('roleChoice');
+    }
+
+    function cancelJoinAndGoBack() {
+        if (peer) { peer.destroy(); peer = null; }
+        document.getElementById('codeInput').value = '';
+        showStep('roleChoice');
+    }
+
+    // Wires up the data channel to an established PeerJS connection (host or guest side)
+    function setupConnection(connection) {
+        conn = connection;
+        conn.on('data', handlePeerData);
+        conn.on('close', () => {
+            alert("The opponent has left the game.");
+            returnToSetup();
+        });
+    }
+
+    function handlePeerData(data) {
+        if (data.error === "game_in_progress") {
+            const status = document.getElementById('statusText');
+            status.innerText = "❌ Access denied: Game already started!";
+            status.style.color = "#e74c3c";
+            conn.close();
+            return;
+        }
+
+        if (data.type === "sync" || data.type === "update") {
+            scoreA = data.scoreA; scoreB = data.scoreB;
+            setsA = data.setsA;   setsB = data.setsB;
+            // Only adopt the name of the OTHER player –
+            // our own, self-entered name stays untouched.
+            if (myRole === 'A') { nameB = data.nameB; } else { nameA = data.nameA; }
+            matchFinished = data.matchFinished;
+
+            if (data.type === "sync") {
+                startGame();
+                sendData(); // immediately mirror back our own (real) name
+            } else {
+                updateDisplay();
+            }
+        }
+    }
+
+    function startHostFlow() {
         const inputName = document.getElementById('nameInput').value.trim();
         if(inputName) nameA = inputName;
         myRole = 'A';
 
-        roomCode = "PP-" + Math.floor(100000 + Math.random() * 900000).toString();
+        roomCode = Math.floor(100000 + Math.random() * 900000).toString();
 
-        const currentUrl = window.location.href.split('?');
-        const joinUrl = `${currentUrl[0]}?g=${roomCode}`;
+        peer = new Peer("ppc-" + roomCode, { config: ICE_SERVERS });
 
-        initWebSocket(() => {
-            // Registers this connection in the room on the server side
-            ws.send(JSON.stringify({
-                type: "join", room: roomCode, sender: 'A',
-                nameA, nameB, scoreA, scoreB, setsA, setsB, matchFinished
-            }));
+        peer.on('open', () => {
+            const currentUrl = window.location.href.split('?');
+            joinUrl = `${currentUrl[0]}?g=${roomCode}`;
 
             // Clears old QR codes if present
             document.getElementById('qrcode').innerHTML = "";
@@ -219,41 +227,102 @@
                 height: 200
             });
 
-            document.getElementById('joinLinkDisplay').textContent = joinUrl;
+            document.getElementById('roomCodeDisplay').textContent = roomCode;
 
-            document.getElementById('qrContainer').style.display = 'block';
+            showStep('hostScreen');
             document.getElementById('statusText').innerText = "Waiting for opponent...";
             document.getElementById('statusText').style.color = "#3498db";
+        });
+
+        peer.on('connection', (incoming) => {
+            if (conn) {
+                // Already paired with an opponent – reject any further join attempts
+                incoming.on('open', () => {
+                    incoming.send({ error: "game_in_progress" });
+                    incoming.close();
+                });
+                return;
+            }
+            setupConnection(incoming);
+        });
+    }
+
+    function submitJoin() {
+        const inputName = document.getElementById('nameInput').value.trim();
+        if(inputName) nameB = inputName;
+
+        const code = document.getElementById('codeInput').value.trim();
+        const status = document.getElementById('statusText');
+        if (!/^\d{6}$/.test(code)) {
+            status.innerText = "❌ Please enter the 6-digit code.";
+            status.style.color = "#e74c3c";
+            return;
+        }
+
+        myRole = 'B';
+        roomCode = code;
+        status.innerText = "Connecting...";
+        status.style.color = "#3498db";
+
+        joinGame("ppc-" + code);
+    }
+
+    function joinGame(hostId) {
+        peer = new Peer({ config: ICE_SERVERS });
+
+        peer.on('open', () => {
+            const connection = peer.connect(hostId);
+            connection.on('open', () => {
+                setupConnection(connection);
+                conn.send({
+                    type: "sync",
+                    nameA, nameB, scoreA, scoreB, setsA, setsB, matchFinished
+                });
+                startGame();
+            });
+        });
+
+        peer.on('error', (err) => {
+            const status = document.getElementById('statusText');
+            status.innerText = err.type === 'peer-unavailable'
+                ? "❌ Game not found. Check the code."
+                : "❌ Connection error.";
+            status.style.color = "#e74c3c";
+            if (peer) { peer.destroy(); peer = null; }
         });
     }
 
     async function shareJoinLink() {
-        const url = document.getElementById('joinLinkDisplay').textContent;
         if (navigator.share) {
             try {
-                await navigator.share({ title: 'Ping Pong Match', url });
+                await navigator.share({
+                    title: 'Ping Pong Match',
+                    text: `Join my ping-pong match — code: ${roomCode}`,
+                    url: joinUrl
+                });
             } catch (err) {}
         } else {
             if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(url);
+                navigator.clipboard.writeText(joinUrl);
             }
             alert("Sharing is not supported on this device. The link was copied to the clipboard instead.");
         }
     }
 
     function returnToSetup() {
-        if (ws) { ws.close(); ws = null; }
+        if (conn) { conn.close(); conn = null; }
+        if (peer) { peer.destroy(); peer = null; }
         scoreA = 0; scoreB = 0; setsA = 0; setsB = 0; matchFinished = false;
         nameA = "Player A"; nameB = "Player B";
-        myRole = ''; roomCode = '';
+        myRole = ''; roomCode = ''; joinUrl = '';
 
         document.getElementById('winnerOverlay').style.display = 'none';
         document.getElementById('gameScreen').style.display = 'none';
         document.getElementById('setupScreen').style.display = 'flex';
 
-        document.getElementById('btnCreate').style.display = 'block';
-        document.getElementById('qrContainer').style.display = 'none';
-        document.getElementById('statusText').innerText = "";
+        document.getElementById('nameInput').value = '';
+        document.getElementById('codeInput').value = '';
+        showStep('roleChoice');
     }
 
     function startGame() {
@@ -327,11 +396,11 @@
 
     function sendData() {
         updateDisplay();
-        if (ws && ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify({
-                type: "update", room: roomCode, sender: myRole,
+        if (conn && conn.open) {
+            conn.send({
+                type: "update",
                 nameA, nameB, scoreA, scoreB, setsA, setsB, matchFinished
-            }));
+            });
         }
     }
 
