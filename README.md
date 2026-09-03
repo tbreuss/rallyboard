@@ -1,4 +1,4 @@
-# 🏓 Ping Pong Live Scoreboard
+# 🏓 Rallyboard
 
 A live table tennis scoreboard for two players on two separate devices (e.g. two phones, or a phone and a laptop), synced in real time peer-to-peer via WebRTC.
 
