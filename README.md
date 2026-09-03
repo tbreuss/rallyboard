@@ -6,13 +6,13 @@ A live table tennis scoreboard for two players on two separate devices (e.g. two
 
 `index.html` is a single, static, self-contained page (vanilla JS, no build step, no backend) that:
 
-- lets the first player start a game and generates a peer ID plus a QR code / shareable link for the opponent to join,
-- lets the second player join by scanning the QR code or opening the link, which connects directly to the first player's device over a [PeerJS](https://peerjs.com/) (WebRTC) data channel,
+- lets the first player start a match, generating a QR code, a shareable link, and a 6-digit code for the opponent to join,
+- lets the second player join by scanning the QR code, opening the link, or just typing in the 6-digit code — each connects directly to the first player's device over a [PeerJS](https://peerjs.com/) (WebRTC) data channel,
 - tracks score, sets, and serve order locally per device and broadcasts every change to the other device directly over that peer-to-peer connection,
 - shows a winner overlay 🏆 once a player wins 3 sets (11 points per set, win by 2),
-- keeps the screen awake during a match (Screen Wake Lock API) and makes a best-effort attempt to block accidental back-navigation during a game.
+- keeps the screen awake during a match (Screen Wake Lock API) and makes a best-effort attempt to block accidental back-navigation while a match is active.
 
-There is no custom server to run: PeerJS's free public broker (`0.peerjs.com`) is used only briefly, to help the two devices find each other and establish the initial WebRTC connection. Once connected, all game data (scores, names, match state) flows directly between the two devices — the broker never sees it.
+There is no custom server to run: PeerJS's free public broker (`0.peerjs.com`) is used only briefly, to help the two devices find each other and establish the initial WebRTC connection. Once connected, all match data (scores, names, match state) flows directly between the two devices — the broker never sees it.
 
 ## Requirements
 
@@ -31,8 +31,8 @@ then open that URL in a browser on each device.
 
 ## Usage
 
-1. Player A opens the page, enters their name, and taps **Start Game**.
-2. Player B scans the displayed QR code (or opens/enters the shared link) on their own device and enters their name.
+1. Player A opens the page, enters their name, and taps **Start Match**.
+2. Player B opens the page, enters their name, taps **Join Match**, and either scans the displayed QR code / opens the shared link, or just types in the 6-digit code shown under it.
 3. Both devices now show the live scoreboard — each player taps **+ Point for me** / **- My error** on their own device to update the score, which is instantly mirrored on the other device.
 4. The match ends automatically once one player wins 3 sets; **Reset Match** starts a fresh match with the same opponent.
 

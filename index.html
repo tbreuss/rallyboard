@@ -54,8 +54,8 @@
     <div id="roleChoice" class="setup-step" style="display: flex;">
         <input type="text" id="nameInput" placeholder="Your name" maxlength="12">
         <hr>
-        <button onclick="startHostFlow()" style="background-color: #3498db; color: white;">Start Game</button>
-        <button onclick="showJoinScreen()" style="background-color: #9b59b6; color: white;">Join Game</button>
+        <button onclick="startHostFlow()" style="background-color: #3498db; color: white;">Start Match</button>
+        <button onclick="showJoinScreen()" style="background-color: #9b59b6; color: white;">Join Match</button>
     </div>
 
     <div id="hostScreen" class="setup-step">
@@ -107,7 +107,7 @@
 
 <!-- NOTICE BANNER -->
 <div id="backBlockedBanner" style="display:none; position:fixed; top:0; left:0; width:100%; padding:12px; box-sizing:border-box; background-color:#e74c3c; color:white; text-align:center; font-weight:bold; z-index:20;">
-    Back navigation is not possible during the game.
+    Back navigation is not possible during the match.
 </div>
 <script>
     let scoreA = 0; let scoreB = 0;
@@ -173,7 +173,7 @@
         conn = connection;
         conn.on('data', handlePeerData);
         conn.on('close', () => {
-            alert("The opponent has left the game.");
+            alert("The opponent has left the match.");
             returnToSetup();
         });
     }
@@ -181,7 +181,7 @@
     function handlePeerData(data) {
         if (data.error === "game_in_progress") {
             const status = document.getElementById('statusText');
-            status.innerText = "❌ Access denied: Game already started!";
+            status.innerText = "❌ Access denied: Match already started!";
             status.style.color = "#e74c3c";
             conn.close();
             return;
@@ -285,7 +285,7 @@
         peer.on('error', (err) => {
             const status = document.getElementById('statusText');
             status.innerText = err.type === 'peer-unavailable'
-                ? "❌ Game not found. Check the code."
+                ? "❌ Match not found. Check the code."
                 : "❌ Connection error.";
             status.style.color = "#e74c3c";
             if (peer) { peer.destroy(); peer = null; }
