@@ -172,3 +172,83 @@ QUnit.module("reset()", hooks => {
         assert.false(document.getElementById("btn-switch").disabled, "Tauschen re-enabled");
     });
 });
+
+QUnit.module("settings persistence", hooks => {
+    hooks.beforeEach(() => {
+        localStorage.removeItem(SETTINGS_STORAGE_KEY);
+        pointsToWin = 11;
+        setsToWin = 3;
+        reset();
+    });
+
+    hooks.afterEach(() => {
+        localStorage.removeItem(SETTINGS_STORAGE_KEY);
+    });
+
+    QUnit.test("saveSettings() writes the current settings to localStorage", assert => {
+        pointsToWin = 21;
+        setsToWin = 4;
+        saveSettings();
+        const stored = JSON.parse(localStorage.getItem(SETTINGS_STORAGE_KEY));
+        assert.strictEqual(stored.pointsToWin, 21);
+        assert.strictEqual(stored.setsToWin, 4);
+    });
+
+    QUnit.test("loadSettings() applies previously saved settings", assert => {
+        localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({ pointsToWin: 21, setsToWin: 2 }));
+        loadSettings();
+        assert.strictEqual(pointsToWin, 21);
+        assert.strictEqual(setsToWin, 2);
+    });
+
+    QUnit.test("loadSettings() is a no-op when nothing is stored", assert => {
+        loadSettings();
+        assert.strictEqual(pointsToWin, 11);
+        assert.strictEqual(setsToWin, 3);
+    });
+});
+
+QUnit.module("updateConfigButtons()", hooks => {
+    hooks.beforeEach(() => {
+        pointsToWin = 11;
+        setsToWin = 3;
+        reset();
+        updateConfigButtons();
+    });
+
+    QUnit.test("marks the buttons matching the current settings as selected", assert => {
+        pointsToWin = 21;
+        setsToWin = 2;
+        updateConfigButtons();
+        assert.true(document.querySelector('[data-points="21"]').classList.contains('selected'));
+        assert.false(document.querySelector('[data-points="11"]').classList.contains('selected'));
+        assert.true(document.querySelector('[data-sets="2"]').classList.contains('selected'));
+        assert.false(document.querySelector('[data-sets="3"]').classList.contains('selected'));
+    });
+});
+
+QUnit.module("menu dropdown", hooks => {
+    hooks.beforeEach(() => {
+        document.getElementById("menu-dropdown").classList.remove("active");
+    });
+
+    QUnit.test("btn-menu toggles the dropdown open and closed", assert => {
+        document.getElementById("btn-menu").click();
+        assert.true(document.getElementById("menu-dropdown").classList.contains("active"), "opens on first click");
+        document.getElementById("btn-menu").click();
+        assert.false(document.getElementById("menu-dropdown").classList.contains("active"), "closes on second click");
+    });
+
+    QUnit.test("clicking outside the menu closes the dropdown", assert => {
+        document.getElementById("btn-menu").click();
+        assert.true(document.getElementById("menu-dropdown").classList.contains("active"));
+        document.body.click();
+        assert.false(document.getElementById("menu-dropdown").classList.contains("active"));
+    });
+
+    QUnit.test("selecting an action closes the dropdown", assert => {
+        document.getElementById("btn-menu").click();
+        document.getElementById("btn-reset").click();
+        assert.false(document.getElementById("menu-dropdown").classList.contains("active"));
+    });
+});
