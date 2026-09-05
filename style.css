@@ -1,0 +1,98 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+}
+body, html {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: #000;
+    font-family: sans-serif;
+}
+#menu {
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 999;
+    display: flex;
+    gap: 10px;
+}
+#menu button {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}
+.playing-field {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+    transition: flex-direction 0.3s ease;
+}
+.side {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+#side-left { background-color: #1a365d; color: #63b3ed; }
+#side-right { background-color: #742a2a; color: #fc8181; }
+
+.sets {
+    font-size: 6vh;
+    color: #fff;
+    margin-bottom: -2vh;
+    font-weight: bold;
+}
+.points {
+    font-size: 38vh;
+    font-weight: bold;
+    line-height: 1;
+}
+.ball {
+    font-size: 6vh;
+    position: absolute;
+    top: 6vh;
+    opacity: 0;
+}
+.serving .ball {
+    opacity: 1;
+}
+#overlay {
+    display: none;
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    color: #fff;
+    z-index: 1000;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 30px;
+}
+#overlay.active { display: flex; }
+#overlay-text { font-size: 6vh; font-weight: bold; padding: 0 20px; }
+#btn-new-match {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    padding: 16px 32px;
+    border-radius: 20px;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+}

@@ -1,0 +1,152 @@
+let p1 = { points: 0, sets: 0 };
+let p2 = { points: 0, sets: 0 };
+let server = "p1";
+let direction = "normal";
+let touchStart = 0;
+let matchOver = false;
+
+function update(player, value) {
+    if (matchOver) return;
+    if (player === "p1") {
+        p1.points = Math.max(0, p1.points + value);
+        document.getElementById("points-p1").innerText = p1.points;
+    } else {
+        p2.points = Math.max(0, p2.points + value);
+        document.getElementById("points-p2").innerText = p2.points;
+    }
+    if (navigator.vibrate) navigator.vibrate(40);
+    checkSet();
+    calculateServer();
+    announce();
+}
+
+function checkSet() {
+    if (p1.points >= 11 && (p1.points - p2.points >= 2)) {
+        p1.sets++;
+        document.getElementById("sets-p1").innerText = p1.sets;
+        newSet("Links");
+    } else if (p2.points >= 11 && (p2.points - p1.points >= 2)) {
+        p2.sets++;
+        document.getElementById("sets-p2").innerText = p2.sets;
+        newSet("Rechts");
+    }
+}
+
+function newSet(winner) {
+    p1.points = 0; p2.points = 0;
+    document.getElementById("points-p1").innerText = 0;
+    document.getElementById("points-p2").innerText = 0;
+    if (p1.sets === 3 || p2.sets === 3) {
+        matchOver = true;
+        speak("Match vorbei! Sieg für " + winner);
+        document.getElementById("overlay-text").innerText = "🏆 Sieg für " + winner + "!\n" + p1.sets + " : " + p2.sets;
+        document.getElementById("overlay").classList.add("active");
+        document.getElementById("btn-reset").disabled = true;
+        document.getElementById("btn-switch").disabled = true;
+    } else {
+        speak("Satzgewinn " + winner + ". Seiten wechseln.");
+        swapSides();
+    }
+}
+
+function swapSides() {
+    const field = document.getElementById("field");
+    if (direction === "normal") {
+        field.style.flexDirection = "row-reverse";
+        direction = "reversed";
+    } else {
+        field.style.flexDirection = "row";
+        direction = "normal";
+    }
+}
+
+function calculateServer() {
+    let total = p1.points + p2.points;
+    if (p1.points >= 10 && p2.points >= 10) {
+        server = (total % 2 === 0) ? "p1" : "p2";
+    } else {
+        server = (Math.floor(total / 2) % 2 === 0) ? "p1" : "p2";
+    }
+    if (server === "p1") {
+        document.getElementById("side-left").classList.add("serving");
+        document.getElementById("side-right").classList.remove("serving");
+    } else {
+        document.getElementById("side-right").classList.add("serving");
+        document.getElementById("side-left").classList.remove("serving");
+    }
+}
+
+function announce() {
+    if (p1.sets === 3 || p2.sets === 3) return;
+    if (direction === "normal") {
+        speak(p1.points + " zu " + p2.points);
+    } else {
+        speak(p2.points + " zu " + p1.points);
+    }
+}
+
+function speak(text) {
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        // Chromium bug: cancel() immediately followed by speak() leaves the
+        // engine silent after the first call. A short delay gives it time
+        // to reset properly.
+        setTimeout(() => {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'de-DE';
+            window.speechSynthesis.speak(utterance);
+        }, 50);
+    }
+}
+
+function reset() {
+    p1 = { points: 0, sets: 0 };
+    p2 = { points: 0, sets: 0 };
+    direction = "normal";
+    matchOver = false;
+    document.getElementById("overlay").classList.remove("active");
+    document.getElementById("btn-reset").disabled = false;
+    document.getElementById("btn-switch").disabled = false;
+    document.getElementById("field").style.flexDirection = "row";
+    document.getElementById("points-p1").innerText = 0;
+    document.getElementById("points-p2").innerText = 0;
+    document.getElementById("sets-p1").innerText = 0;
+    document.getElementById("sets-p2").innerText = 0;
+    calculateServer();
+    speak("Neues Spiel");
+}
+
+document.getElementById("btn-reset").addEventListener('click', (e) => { e.stopPropagation(); reset(); });
+document.getElementById("btn-new-match").addEventListener('click', (e) => { e.stopPropagation(); reset(); });
+document.getElementById("btn-switch").addEventListener('click', (e) => { e.stopPropagation(); swapSides(); });
+
+document.getElementById("side-left").addEventListener('touchstart', (e) => { touchStart = e.touches[0].clientY; });
+document.getElementById("side-left").addEventListener('touchend', (e) => {
+    let diff = e.changedTouches[0].clientY - touchStart;
+    if (diff > 50) { update("p1", -1); }
+    else if (Math.abs(diff) < 10) { update("p1", 1); }
+});
+
+document.getElementById("side-right").addEventListener('touchstart', (e) => { touchStart = e.touches[0].clientY; });
+document.getElementById("side-right").addEventListener('touchend', (e) => {
+    let diff = e.changedTouches[0].clientY - touchStart;
+    if (diff > 50) { update("p2", -1); }
+    else if (Math.abs(diff) < 10) { update("p2", 1); }
+});
+
+let keyTimer = 0;
+window.addEventListener('keydown', (e) => {
+    if ((e.key === 'a' || e.key === 'ArrowLeft' || e.key === 'b' || e.key === 'ArrowRight') && keyTimer === 0) {
+        keyTimer = Date.now();
+    }
+});
+window.addEventListener('keyup', (e) => {
+    if (keyTimer === 0) return;
+    let duration = Date.now() - keyTimer;
+    keyTimer = 0;
+    let value = (duration > 500) ? -1 : 1;
+    let leftPlayer = (direction === "normal") ? "p1" : "p2";
+    let rightPlayer = (direction === "normal") ? "p2" : "p1";
+    if (e.key === 'a' || e.key === 'ArrowLeft') update(leftPlayer, value);
+    if (e.key === 'b' || e.key === 'ArrowRight') update(rightPlayer, value);
+});
