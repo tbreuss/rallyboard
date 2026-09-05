@@ -1,3 +1,13 @@
+:root {
+    --pill-bg: rgba(255, 255, 255, 0.2);
+    --pill-border: rgba(255, 255, 255, 0.4);
+    --accent-blue: #3182ce;
+    --accent-green: #2ecc71;
+    --side-left-bg: #1a365d;
+    --side-left-fg: #63b3ed;
+    --side-right-bg: #742a2a;
+    --side-right-fg: #fc8181;
+}
 * {
     box-sizing: border-box;
     margin: 0;
@@ -15,15 +25,15 @@ body, html {
 }
 #menu {
     position: fixed;
-    top: 10px;
+    top: max(10px, env(safe-area-inset-top));
     left: 50%;
     transform: translateX(-50%);
     z-index: 999;
 }
 #menu button {
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--pill-bg);
     color: #fff;
-    border: 1px solid rgba(255, 255, 255, 0.4);
+    border: 1px solid var(--pill-border);
     padding: 8px 16px;
     border-radius: 20px;
     font-size: 14px;
@@ -68,19 +78,29 @@ body, html {
     align-items: center;
     position: relative;
 }
-#side-left { background-color: #1a365d; color: #63b3ed; }
-#side-right { background-color: #742a2a; color: #fc8181; }
+#side-left { background-color: var(--side-left-bg); color: var(--side-left-fg); }
+#side-right { background-color: var(--side-right-bg); color: var(--side-right-fg); }
 
 .sets {
     font-size: 6vh;
     color: #fff;
     margin-bottom: -2vh;
     font-weight: bold;
+    font-variant-numeric: tabular-nums;
 }
 .points {
     font-size: 38vh;
     font-weight: bold;
     line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+.points.pulse {
+    animation: score-pulse 0.25s ease;
+}
+@keyframes score-pulse {
+    0% { transform: scale(1); }
+    30% { transform: scale(1.06); }
+    100% { transform: scale(1); }
 }
 .ball {
     font-size: 6vh;
@@ -108,9 +128,9 @@ body, html {
 .config-group p { font-size: 14px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
 .config-options { display: flex; gap: 10px; }
 .config-option {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--pill-bg);
     color: #fff;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border: 1px solid var(--pill-border);
     padding: 10px 20px;
     border-radius: 20px;
     font-size: 16px;
@@ -118,11 +138,11 @@ body, html {
     cursor: pointer;
 }
 .config-option.selected {
-    background: #3182ce;
-    border-color: #3182ce;
+    background: var(--accent-blue);
+    border-color: var(--accent-blue);
 }
 #btn-apply-settings {
-    background: #2ecc71;
+    background: var(--accent-green);
     color: #fff;
     border: none;
     padding: 16px 40px;
@@ -146,9 +166,9 @@ body, html {
 #overlay.active { display: flex; }
 #overlay-text { font-size: 6vh; font-weight: bold; padding: 0 20px; }
 #btn-new-match {
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--pill-bg);
     color: #fff;
-    border: 1px solid rgba(255, 255, 255, 0.4);
+    border: 1px solid var(--pill-border);
     padding: 16px 32px;
     border-radius: 20px;
     font-size: 20px;

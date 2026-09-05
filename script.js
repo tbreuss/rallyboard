@@ -32,14 +32,24 @@ function updateConfigButtons() {
 
 loadSettings();
 
+function pulse(el) {
+    el.classList.remove("pulse");
+    void el.offsetWidth; // force reflow so the animation restarts on rapid updates
+    el.classList.add("pulse");
+}
+
 function update(player, value) {
     if (matchOver) return;
     if (player === "p1") {
         p1.points = Math.max(0, p1.points + value);
-        document.getElementById("points-p1").innerText = p1.points;
+        const el = document.getElementById("points-p1");
+        el.innerText = p1.points;
+        pulse(el);
     } else {
         p2.points = Math.max(0, p2.points + value);
-        document.getElementById("points-p2").innerText = p2.points;
+        const el = document.getElementById("points-p2");
+        el.innerText = p2.points;
+        pulse(el);
     }
     if (navigator.vibrate) navigator.vibrate(40);
     checkSet();
