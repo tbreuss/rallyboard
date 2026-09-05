@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ping Pong Counter – Tests</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/qunit/2.20.1/qunit.min.css">
+</head>
+<body>
+<div id="qunit"></div>
+<div id="qunit-fixture"></div>
+
+<!-- Real game markup so script.js's DOM lookups/listeners work as in the app -->
+<div id="menu">
+    <button id="btn-reset">Reset</button>
+    <button id="btn-switch">Tauschen</button>
+</div>
+
+<div id="field" class="playing-field">
+    <div id="side-left" class="side serving">
+        <div class="ball">🏓</div>
+        <div id="sets-p1" class="sets">0</div>
+        <div id="points-p1" class="points">0</div>
+    </div>
+    <div id="side-right" class="side">
+        <div class="ball">🏓</div>
+        <div id="sets-p2" class="sets">0</div>
+        <div id="points-p2" class="points">0</div>
+    </div>
+</div>
+
+<div id="overlay">
+    <div id="overlay-text"></div>
+    <button id="btn-new-match">Neues Spiel</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qunit/2.20.1/qunit.min.js"></script>
+<script src="../script.js"></script>
+<script src="tests.js"></script>
+</body>
+</html>
