@@ -125,6 +125,35 @@ QUnit.module("calculateServer()", hooks => {
     });
 });
 
+QUnit.module("toggleServer()", hooks => {
+    hooks.beforeEach(() => {
+        pointsToWin = 11;
+        setsToWin = 3;
+        reset();
+    });
+
+    QUnit.test("flips the calculated server", assert => {
+        assert.strictEqual(server, "p1", "p1 serves first");
+        toggleServer();
+        assert.strictEqual(server, "p2", "flipped to p2");
+        toggleServer();
+        assert.strictEqual(server, "p1", "flipped back to p1");
+    });
+
+    QUnit.test("persists across subsequent points instead of being overwritten", assert => {
+        toggleServer();
+        assert.strictEqual(server, "p2", "flipped to p2 while at 0:0");
+        update("p1", 1); // 1:0 – would naturally still be p1's serve
+        assert.strictEqual(server, "p2", "flip still applied after a point is scored");
+    });
+
+    QUnit.test("is reset on reset()", assert => {
+        toggleServer();
+        reset();
+        assert.strictEqual(server, "p1", "back to the natural server after reset");
+    });
+});
+
 QUnit.module("swapSides()", hooks => {
     hooks.beforeEach(() => {
         // Force known defaults regardless of settings persisted in
@@ -260,5 +289,24 @@ QUnit.module("menu dropdown", hooks => {
         document.getElementById("btn-menu").click();
         document.getElementById("btn-reset").click();
         assert.false(document.getElementById("menu-dropdown").classList.contains("active"));
+    });
+});
+
+QUnit.module("help screen", hooks => {
+    hooks.beforeEach(() => {
+        document.getElementById("help-screen").classList.remove("active");
+    });
+
+    QUnit.test("btn-help opens the help screen and closes the dropdown", assert => {
+        document.getElementById("menu-dropdown").classList.add("active");
+        document.getElementById("btn-help").click();
+        assert.true(document.getElementById("help-screen").classList.contains("active"), "help screen shown");
+        assert.false(document.getElementById("menu-dropdown").classList.contains("active"), "dropdown closed");
+    });
+
+    QUnit.test("btn-close-help closes the help screen", assert => {
+        document.getElementById("help-screen").classList.add("active");
+        document.getElementById("btn-close-help").click();
+        assert.false(document.getElementById("help-screen").classList.contains("active"));
     });
 });

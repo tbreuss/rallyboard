@@ -8,7 +8,7 @@
 </head>
 <body>
 
-<div id="config-screen">
+<div id="config-screen" class="fullscreen-overlay">
     <h2>Einstellungen</h2>
     <div class="config-group">
         <p>Punkte pro Satz</p>
@@ -31,9 +31,11 @@
 <div id="menu">
     <button id="btn-menu">☰</button>
     <div id="menu-dropdown">
-        <button id="btn-settings">Optionen</button>
-        <button id="btn-reset">Reset</button>
-        <button id="btn-switch">Tauschen</button>
+        <button id="btn-settings">Einstellungen</button>
+        <button id="btn-reset">Match zurücksetzen</button>
+        <button id="btn-switch">Seiten tauschen</button>
+        <button id="btn-toggle-server">Aufschlag wechseln</button>
+        <button id="btn-help">Hilfe</button>
     </div>
 </div>
 
@@ -50,9 +52,31 @@
     </div>
 </div>
 
-<div id="overlay">
+<div id="overlay" class="fullscreen-overlay">
     <div id="overlay-text"></div>
     <button id="btn-new-match">Neues Spiel</button>
+</div>
+
+<div id="help-screen" class="fullscreen-overlay">
+    <h2>Hilfe</h2>
+    <div class="help-section">
+        <p class="help-title">Touch</p>
+        <p>Antippen der eigenen Seite = +1 Punkt</p>
+        <p>Nach unten wischen = -1 Punkt (Korrektur)</p>
+    </div>
+    <div class="help-section">
+        <p class="help-title">Tastatur</p>
+        <p>A / ← = linke Seite, B / → = rechte Seite</p>
+        <p>Kurz drücken = +1, gedrückt halten (&gt;500ms) = -1</p>
+    </div>
+    <div class="help-section">
+        <p class="help-title">Menü</p>
+        <p>Einstellungen: Punkte pro Satz und Sätze anzahl festlegen</p>
+        <p>Match zurücksetzen: startet das aktuelle Match sofort neu</p>
+        <p>Seiten tauschen: wechselt manuell, welche Seite links/rechts angezeigt wird</p>
+        <p>Aufschlag wechseln: korrigiert manuell, wer aufschlägt</p>
+    </div>
+    <button id="btn-close-help">Schliessen</button>
 </div>
 
 <script src="script.js"></script>

@@ -2,6 +2,7 @@ let p1 = { points: 0, sets: 0 };
 let p2 = { points: 0, sets: 0 };
 let server = "p1";
 let direction = "normal";
+let serverFlip = false;
 let touchStart = 0;
 let matchOver = false;
 let pointsToWin = 11;
@@ -80,10 +81,16 @@ function newSet(winner) {
         document.getElementById("overlay").classList.add("active");
         document.getElementById("btn-reset").disabled = true;
         document.getElementById("btn-switch").disabled = true;
+        document.getElementById("btn-toggle-server").disabled = true;
     } else {
         speak("Satzgewinn " + winner + ". Seiten wechseln.");
         swapSides();
     }
+}
+
+function toggleServer() {
+    serverFlip = !serverFlip;
+    calculateServer();
 }
 
 function swapSides() {
@@ -103,11 +110,15 @@ function calculateServer() {
     // under the old 21-point rule; once both reach pointsToWin - 1, serve
     // alternates every single point.
     let serviceInterval = (pointsToWin === 21) ? 5 : 2;
+    let calculatedServer;
     if (p1.points >= pointsToWin - 1 && p2.points >= pointsToWin - 1) {
-        server = (total % 2 === 0) ? "p1" : "p2";
+        calculatedServer = (total % 2 === 0) ? "p1" : "p2";
     } else {
-        server = (Math.floor(total / serviceInterval) % 2 === 0) ? "p1" : "p2";
+        calculatedServer = (Math.floor(total / serviceInterval) % 2 === 0) ? "p1" : "p2";
     }
+    // serverFlip is a manual correction (persists across points), analogous
+    // to the manual "Seiten tauschen" override of the automatic side swap.
+    server = serverFlip ? (calculatedServer === "p1" ? "p2" : "p1") : calculatedServer;
     if (server === "p1") {
         document.getElementById("side-left").classList.add("serving");
         document.getElementById("side-right").classList.remove("serving");
@@ -144,8 +155,10 @@ function reset() {
     p1 = { points: 0, sets: 0 };
     p2 = { points: 0, sets: 0 };
     direction = "normal";
+    serverFlip = false;
     matchOver = false;
     document.getElementById("overlay").classList.remove("active");
+    document.getElementById("btn-toggle-server").disabled = false;
     document.getElementById("btn-reset").disabled = false;
     document.getElementById("btn-switch").disabled = false;
     document.getElementById("field").style.flexDirection = "row";
@@ -192,6 +205,16 @@ document.getElementById("btn-apply-settings").addEventListener('click', () => {
     reset();
 });
 
+document.getElementById("btn-help").addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.getElementById("menu-dropdown").classList.remove("active");
+    document.getElementById("help-screen").classList.add("active");
+});
+
+document.getElementById("btn-close-help").addEventListener('click', () => {
+    document.getElementById("help-screen").classList.remove("active");
+});
+
 updateConfigButtons();
 
 document.getElementById("btn-reset").addEventListener('click', (e) => {
@@ -204,6 +227,11 @@ document.getElementById("btn-switch").addEventListener('click', (e) => {
     e.stopPropagation();
     document.getElementById("menu-dropdown").classList.remove("active");
     swapSides();
+});
+document.getElementById("btn-toggle-server").addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.getElementById("menu-dropdown").classList.remove("active");
+    toggleServer();
 });
 
 document.getElementById("side-left").addEventListener('touchstart', (e) => { touchStart = e.touches[0].clientY; });
