@@ -174,7 +174,13 @@ QUnit.module("reset()", hooks => {
 });
 
 QUnit.module("settings persistence", hooks => {
+    // tests/index.html shares its origin (and thus localStorage) with the
+    // real app, so back up whatever was already stored there and restore it
+    // afterward instead of just deleting it.
+    let originalStoredSettings;
+
     hooks.beforeEach(() => {
+        originalStoredSettings = localStorage.getItem(SETTINGS_STORAGE_KEY);
         localStorage.removeItem(SETTINGS_STORAGE_KEY);
         pointsToWin = 11;
         setsToWin = 3;
@@ -182,7 +188,11 @@ QUnit.module("settings persistence", hooks => {
     });
 
     hooks.afterEach(() => {
-        localStorage.removeItem(SETTINGS_STORAGE_KEY);
+        if (originalStoredSettings === null) {
+            localStorage.removeItem(SETTINGS_STORAGE_KEY);
+        } else {
+            localStorage.setItem(SETTINGS_STORAGE_KEY, originalStoredSettings);
+        }
     });
 
     QUnit.test("saveSettings() writes the current settings to localStorage", assert => {
