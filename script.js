@@ -4,6 +4,33 @@ let server = "p1";
 let direction = "normal";
 let touchStart = 0;
 let matchOver = false;
+let pointsToWin = 11;
+let setsToWin = 3;
+
+const SETTINGS_STORAGE_KEY = "pingpong-settings";
+
+function loadSettings() {
+    try {
+        const saved = JSON.parse(localStorage.getItem(SETTINGS_STORAGE_KEY));
+        if (saved) {
+            if (saved.pointsToWin) pointsToWin = saved.pointsToWin;
+            if (saved.setsToWin) setsToWin = saved.setsToWin;
+        }
+    } catch (e) {}
+}
+
+function saveSettings() {
+    try {
+        localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({ pointsToWin, setsToWin }));
+    } catch (e) {}
+}
+
+function updateConfigButtons() {
+    document.querySelectorAll('[data-points]').forEach(b => b.classList.toggle('selected', Number(b.dataset.points) === pointsToWin));
+    document.querySelectorAll('[data-sets]').forEach(b => b.classList.toggle('selected', Number(b.dataset.sets) === setsToWin));
+}
+
+loadSettings();
 
 function update(player, value) {
     if (matchOver) return;
@@ -21,11 +48,11 @@ function update(player, value) {
 }
 
 function checkSet() {
-    if (p1.points >= 11 && (p1.points - p2.points >= 2)) {
+    if (p1.points >= pointsToWin && (p1.points - p2.points >= 2)) {
         p1.sets++;
         document.getElementById("sets-p1").innerText = p1.sets;
         newSet("Links");
-    } else if (p2.points >= 11 && (p2.points - p1.points >= 2)) {
+    } else if (p2.points >= pointsToWin && (p2.points - p1.points >= 2)) {
         p2.sets++;
         document.getElementById("sets-p2").innerText = p2.sets;
         newSet("Rechts");
@@ -36,7 +63,7 @@ function newSet(winner) {
     p1.points = 0; p2.points = 0;
     document.getElementById("points-p1").innerText = 0;
     document.getElementById("points-p2").innerText = 0;
-    if (p1.sets === 3 || p2.sets === 3) {
+    if (p1.sets === setsToWin || p2.sets === setsToWin) {
         matchOver = true;
         speak("Match vorbei! Sieg für " + winner);
         document.getElementById("overlay-text").innerText = "🏆 Sieg für " + winner + "!\n" + p1.sets + " : " + p2.sets;
@@ -62,10 +89,14 @@ function swapSides() {
 
 function calculateServer() {
     let total = p1.points + p2.points;
-    if (p1.points >= 10 && p2.points >= 10) {
+    // Serve switches every 2 points under the 11-point rule, every 5 points
+    // under the old 21-point rule; once both reach pointsToWin - 1, serve
+    // alternates every single point.
+    let serviceInterval = (pointsToWin === 21) ? 5 : 2;
+    if (p1.points >= pointsToWin - 1 && p2.points >= pointsToWin - 1) {
         server = (total % 2 === 0) ? "p1" : "p2";
     } else {
-        server = (Math.floor(total / 2) % 2 === 0) ? "p1" : "p2";
+        server = (Math.floor(total / serviceInterval) % 2 === 0) ? "p1" : "p2";
     }
     if (server === "p1") {
         document.getElementById("side-left").classList.add("serving");
@@ -77,7 +108,7 @@ function calculateServer() {
 }
 
 function announce() {
-    if (p1.sets === 3 || p2.sets === 3) return;
+    if (p1.sets === setsToWin || p2.sets === setsToWin) return;
     if (direction === "normal") {
         speak(p1.points + " zu " + p2.points);
     } else {
@@ -116,9 +147,54 @@ function reset() {
     speak("Neues Spiel");
 }
 
-document.getElementById("btn-reset").addEventListener('click', (e) => { e.stopPropagation(); reset(); });
+document.querySelectorAll('[data-points]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        pointsToWin = Number(btn.dataset.points);
+        updateConfigButtons();
+    });
+});
+
+document.querySelectorAll('[data-sets]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        setsToWin = Number(btn.dataset.sets);
+        updateConfigButtons();
+    });
+});
+
+document.getElementById("btn-menu").addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.getElementById("menu-dropdown").classList.toggle("active");
+});
+
+document.addEventListener('click', () => {
+    document.getElementById("menu-dropdown").classList.remove("active");
+});
+
+document.getElementById("btn-settings").addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.getElementById("menu-dropdown").classList.remove("active");
+    document.getElementById("config-screen").classList.add("active");
+});
+
+document.getElementById("btn-apply-settings").addEventListener('click', () => {
+    document.getElementById("config-screen").classList.remove("active");
+    saveSettings();
+    reset();
+});
+
+updateConfigButtons();
+
+document.getElementById("btn-reset").addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.getElementById("menu-dropdown").classList.remove("active");
+    reset();
+});
 document.getElementById("btn-new-match").addEventListener('click', (e) => { e.stopPropagation(); reset(); });
-document.getElementById("btn-switch").addEventListener('click', (e) => { e.stopPropagation(); swapSides(); });
+document.getElementById("btn-switch").addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.getElementById("menu-dropdown").classList.remove("active");
+    swapSides();
+});
 
 document.getElementById("side-left").addEventListener('touchstart', (e) => { touchStart = e.touches[0].clientY; });
 document.getElementById("side-left").addEventListener('touchend', (e) => {

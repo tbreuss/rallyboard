@@ -10,9 +10,30 @@
 <div id="qunit-fixture"></div>
 
 <!-- Real game markup so script.js's DOM lookups/listeners work as in the app -->
+<div id="config-screen">
+    <div class="config-group">
+        <div class="config-options">
+            <button class="config-option selected" data-points="11">11</button>
+            <button class="config-option" data-points="21">21</button>
+        </div>
+    </div>
+    <div class="config-group">
+        <div class="config-options">
+            <button class="config-option" data-sets="2">Best of 3</button>
+            <button class="config-option selected" data-sets="3">Best of 5</button>
+            <button class="config-option" data-sets="4">Best of 7</button>
+        </div>
+    </div>
+    <button id="btn-apply-settings">Übernehmen</button>
+</div>
+
 <div id="menu">
-    <button id="btn-reset">Reset</button>
-    <button id="btn-switch">Tauschen</button>
+    <button id="btn-menu">☰</button>
+    <div id="menu-dropdown">
+        <button id="btn-settings">Optionen</button>
+        <button id="btn-reset">Reset</button>
+        <button id="btn-switch">Tauschen</button>
+    </div>
 </div>
 
 <div id="field" class="playing-field">

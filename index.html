@@ -8,9 +8,33 @@
 </head>
 <body>
 
+<div id="config-screen">
+    <h2>Einstellungen</h2>
+    <div class="config-group">
+        <p>Punkte pro Satz</p>
+        <div class="config-options">
+            <button class="config-option selected" data-points="11">11</button>
+            <button class="config-option" data-points="21">21</button>
+        </div>
+    </div>
+    <div class="config-group">
+        <p>Sätze</p>
+        <div class="config-options">
+            <button class="config-option" data-sets="2">Best of 3</button>
+            <button class="config-option selected" data-sets="3">Best of 5</button>
+            <button class="config-option" data-sets="4">Best of 7</button>
+        </div>
+    </div>
+    <button id="btn-apply-settings">Übernehmen</button>
+</div>
+
 <div id="menu">
-    <button id="btn-reset">Reset</button>
-    <button id="btn-switch">Tauschen</button>
+    <button id="btn-menu">☰</button>
+    <div id="menu-dropdown">
+        <button id="btn-settings">Optionen</button>
+        <button id="btn-reset">Reset</button>
+        <button id="btn-switch">Tauschen</button>
+    </div>
 </div>
 
 <div id="field" class="playing-field">

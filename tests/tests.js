@@ -1,5 +1,11 @@
 QUnit.module("update()", hooks => {
-    hooks.beforeEach(() => reset());
+    hooks.beforeEach(() => {
+        // Force known defaults regardless of settings persisted in
+        // localStorage from manually testing index.html (same origin).
+        pointsToWin = 11;
+        setsToWin = 3;
+        reset();
+    });
 
     QUnit.test("increments the correct player's points", assert => {
         update("p1", 1);
@@ -28,7 +34,13 @@ QUnit.module("update()", hooks => {
 });
 
 QUnit.module("checkSet() / newSet()", hooks => {
-    hooks.beforeEach(() => reset());
+    hooks.beforeEach(() => {
+        // Force known defaults regardless of settings persisted in
+        // localStorage from manually testing index.html (same origin).
+        pointsToWin = 11;
+        setsToWin = 3;
+        reset();
+    });
 
     QUnit.test("wins a set at 11:0 and resets points", assert => {
         for (let i = 0; i < 11; i++) update("p1", 1);
@@ -66,7 +78,13 @@ QUnit.module("checkSet() / newSet()", hooks => {
 });
 
 QUnit.module("calculateServer()", hooks => {
-    hooks.beforeEach(() => reset());
+    hooks.beforeEach(() => {
+        // Force known defaults regardless of settings persisted in
+        // localStorage from manually testing index.html (same origin).
+        pointsToWin = 11;
+        setsToWin = 3;
+        reset();
+    });
 
     QUnit.test("switches server every 2 points before 10:10", assert => {
         assert.strictEqual(server, "p1", "p1 serves first");
@@ -84,10 +102,37 @@ QUnit.module("calculateServer()", hooks => {
         update("p1", 1); // 11:10
         assert.notStrictEqual(server, serverAt10_10, "server alternates every point in deuce");
     });
+
+    QUnit.test("switches server every 5 points under the 21-point rule", assert => {
+        pointsToWin = 21;
+        reset();
+        assert.strictEqual(server, "p1", "p1 serves first");
+        for (let i = 0; i < 4; i++) update("p1", 1); // 4:0
+        assert.strictEqual(server, "p1", "still p1 after 4 points");
+        update("p1", 1); // 5:0
+        assert.strictEqual(server, "p2", "p2 serves after 5 points");
+    });
+
+    QUnit.test("switches server every single point once both reach 20 under the 21-point rule", assert => {
+        pointsToWin = 21;
+        reset();
+        for (let i = 0; i < 20; i++) update("p1", 1);
+        for (let i = 0; i < 19; i++) update("p2", 1); // 20:19
+        update("p2", 1); // 20:20
+        const serverAt20_20 = server;
+        update("p1", 1); // 21:20
+        assert.notStrictEqual(server, serverAt20_20, "server alternates every point in deuce");
+    });
 });
 
 QUnit.module("swapSides()", hooks => {
-    hooks.beforeEach(() => reset());
+    hooks.beforeEach(() => {
+        // Force known defaults regardless of settings persisted in
+        // localStorage from manually testing index.html (same origin).
+        pointsToWin = 11;
+        setsToWin = 3;
+        reset();
+    });
 
     QUnit.test("toggles direction and the field's flex-direction", assert => {
         assert.strictEqual(direction, "normal");
@@ -102,7 +147,13 @@ QUnit.module("swapSides()", hooks => {
 });
 
 QUnit.module("reset()", hooks => {
-    hooks.beforeEach(() => reset());
+    hooks.beforeEach(() => {
+        // Force known defaults regardless of settings persisted in
+        // localStorage from manually testing index.html (same origin).
+        pointsToWin = 11;
+        setsToWin = 3;
+        reset();
+    });
 
     QUnit.test("restores initial state after a finished match", assert => {
         for (let s = 0; s < 3; s++) {
