@@ -1,0 +1,192 @@
+:root {
+    --pill-bg: rgba(255, 255, 255, 0.2);
+    --pill-border: rgba(255, 255, 255, 0.4);
+    --accent-blue: #3182ce;
+    --accent-green: #2ecc71;
+    --side-left-bg: #1a365d;
+    --side-left-fg: #63b3ed;
+    --side-right-bg: #742a2a;
+    --side-right-fg: #fc8181;
+}
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+}
+body, html {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: #000;
+    font-family: sans-serif;
+}
+#menu {
+    position: fixed;
+    top: max(10px, env(safe-area-inset-top));
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 999;
+}
+#menu button {
+    background: var(--pill-bg);
+    color: #fff;
+    border: 1px solid var(--pill-border);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}
+#btn-menu {
+    font-size: 18px;
+    line-height: 1;
+    padding: 8px 14px;
+}
+#menu-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 8px;
+    flex-direction: column;
+    gap: 8px;
+    background: rgba(20, 20, 20, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 10px;
+}
+#menu-dropdown.active { display: flex; }
+#menu-dropdown button { white-space: nowrap; }
+.playing-field {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+    transition: flex-direction 0.3s ease;
+}
+.side {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+#side-left { background-color: var(--side-left-bg); color: var(--side-left-fg); }
+#side-right { background-color: var(--side-right-bg); color: var(--side-right-fg); }
+
+.sets {
+    font-size: 6vh;
+    color: #fff;
+    margin-bottom: -2vh;
+    font-weight: bold;
+    font-variant-numeric: tabular-nums;
+}
+.points {
+    font-size: 38vh;
+    font-weight: bold;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+.points.pulse {
+    animation: score-pulse 0.25s ease;
+}
+@keyframes score-pulse {
+    0% { transform: scale(1); }
+    30% { transform: scale(1.06); }
+    100% { transform: scale(1); }
+}
+.ball {
+    font-size: 6vh;
+    position: absolute;
+    top: 6vh;
+    opacity: 0;
+}
+.serving .ball {
+    opacity: 1;
+}
+.fullscreen-overlay {
+    display: none;
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    color: #fff;
+    z-index: 2000;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
+    text-align: center;
+}
+.fullscreen-overlay.active { display: flex; }
+#config-screen { background: #000; }
+.config-group { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.config-group p { font-size: 14px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
+.config-options { display: flex; gap: 10px; }
+.config-option {
+    background: var(--pill-bg);
+    color: #fff;
+    border: 1px solid var(--pill-border);
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+}
+.config-option.selected {
+    background: var(--accent-blue);
+    border-color: var(--accent-blue);
+}
+#btn-apply-settings {
+    background: var(--accent-green);
+    color: #fff;
+    border: none;
+    padding: 16px 40px;
+    border-radius: 20px;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+}
+#overlay {
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 1000;
+}
+#overlay-text { font-size: 6vh; font-weight: bold; padding: 0 20px; }
+#help-screen {
+    background: #000;
+    padding: 20px;
+    overflow-y: auto;
+}
+.help-section { max-width: 400px; }
+.help-title {
+    font-size: 14px;
+    color: #aaa;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+}
+.help-section p:not(.help-title) { margin: 4px 0; }
+#btn-close-help {
+    background: var(--pill-bg);
+    color: #fff;
+    border: 1px solid var(--pill-border);
+    padding: 12px 32px;
+    border-radius: 20px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+}
+#btn-new-match {
+    background: var(--pill-bg);
+    color: #fff;
+    border: 1px solid var(--pill-border);
+    padding: 16px 32px;
+    border-radius: 20px;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+}

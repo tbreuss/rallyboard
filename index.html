@@ -1,443 +1,90 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rallyboard</title>
-    <!-- This library generates QR codes locally and offline on the phone -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <!-- WebRTC peer-to-peer connections via the free public PeerJS broker -->
-    <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0; padding: 0;
-            background-color: #121212; color: white;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            height: 100vh; overflow: hidden;
-        }
-        .setup-screen { display: flex; flex-direction: column; gap: 12px; text-align: center; width: 85%; max-width: 350px; align-items: center; }
-        .game-screen { display: none; flex-direction: column; align-items: center; width: 100%; }
-        .score-board { display: flex; justify-content: space-around; width: 100%; max-width: 600px; margin-bottom: 20px; }
-        .player-box { text-align: center; width: 45%; padding: 15px; border-radius: 10px; transition: all 0.3s; }
-        .serving { background-color: #1e272e; border: 2px solid #3498db; }
-        .player-name { font-size: 1.4rem; color: #fff; font-weight: bold; }
-        .sets-won { font-size: 1.5rem; color: #f1c40f; font-weight: bold; margin-top: 5px; }
-        .score { font-size: 6rem; font-weight: bold; margin: 5px 0; }
-        .service-indicator { font-size: 2rem; height: 40px; }
-        .controls { display: flex; flex-direction: column; gap: 15px; width: 80%; max-width: 400px; }
-        button { padding: 20px; font-size: 1.3rem; font-weight: bold; border: none; border-radius: 10px; cursor: pointer; width: 100%; }
-        .btn-plus { background-color: #2ecc71; color: white; height: 120px; font-size: 2rem; }
-        .btn-minus { background-color: #e74c3c; color: white; }
-        .btn-reset { background-color: #7f8c8d; color: white; margin-top: 10px; }
-        input { padding: 15px; font-size: 1.2rem; border-radius: 8px; border: none; text-align: center; background-color: #2c3e50; color: white; width: 100%; box-sizing: border-box; }
-        .winner-overlay {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0, 0, 0, 0.9); flex-direction: column;
-            align-items: center; justify-content: center; z-index: 10;
-        }
-        .winner-text { font-size: 2.5rem; color: #f1c40f; font-weight: bold; text-align: center; margin-bottom: 30px; }
-        hr { border: 0; height: 1px; background: #34495e; margin: 15px 0; width: 100%; }
-        #qrcode { background: white; padding: 10px; border-radius: 8px; display: inline-block; margin-top: 10px; }
-        .setup-step { display: none; flex-direction: column; gap: 12px; align-items: center; width: 100%; }
-        .room-code { font-size: 2.2rem; font-weight: bold; letter-spacing: 6px; color: #f1c40f; }
-        .btn-back { background: none; color: #aaa; text-decoration: underline; font-weight: normal; padding: 5px; width: auto; font-size: 1rem; }
-        #codeInput { letter-spacing: 6px; text-align: center; font-size: 1.5rem; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Ping Pong Pro Zähler</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Ping Pong">
+    <meta name="theme-color" content="#000000">
 </head>
 <body>
 
-<!-- START SCREEN -->
-<div id="setupScreen" class="setup-screen">
-    <h2>Rallyboard</h2>
-
-    <div id="roleChoice" class="setup-step" style="display: flex;">
-        <input type="text" id="nameInput" placeholder="Your name" maxlength="12">
-        <hr>
-        <button onclick="startHostFlow()" style="background-color: #3498db; color: white;">Start Match</button>
-        <button onclick="showJoinScreen()" style="background-color: #9b59b6; color: white;">Join Match</button>
-    </div>
-
-    <div id="hostScreen" class="setup-step">
-        <!-- The library draws the QR code right here -->
-        <div id="qrcode"></div>
-        <div id="roomCodeDisplay" class="room-code"></div>
-        <button type="button" onclick="shareJoinLink()" title="Share" style="width: auto; padding: 10px 14px; font-size: 0.9rem;">📤 Share</button>
-        <button type="button" onclick="cancelHostAndGoBack()" class="btn-back">Back</button>
-    </div>
-
-    <div id="joinScreen" class="setup-step">
-        <input type="text" id="codeInput" inputmode="numeric" pattern="[0-9]*" placeholder="Enter code" maxlength="6">
-        <button onclick="submitJoin()" style="background-color: #9b59b6; color: white;">Join</button>
-        <button type="button" onclick="cancelJoinAndGoBack()" class="btn-back">Back</button>
-    </div>
-
-    <h3 id="statusText" style="margin-top: 15px; padding: 0 10px;"></h3>
-</div>
-
-<!-- GAME SCREEN -->
-<div id="gameScreen" class="game-screen">
-    <div class="score-board">
-        <div id="boxA" class="player-box">
-            <div id="serviceA" class="service-indicator"></div>
-            <div id="nameA" class="player-name">Player A</div>
-            <div id="setsA" class="sets-won">Sets: 0</div>
-            <div id="scoreA" class="score">0</div>
-        </div>
-        <div id="boxB" class="player-box">
-            <div id="serviceB" class="service-indicator"></div>
-            <div id="nameB" class="player-name">Player B</div>
-            <div id="setsB" class="sets-won">Sets: 0</div>
-            <div id="scoreB" class="score">0</div>
+<div id="config-screen" class="fullscreen-overlay">
+    <h2>Einstellungen</h2>
+    <div class="config-group">
+        <p>Punkte pro Satz</p>
+        <div class="config-options">
+            <button class="config-option selected" data-points="11">11</button>
+            <button class="config-option" data-points="21">21</button>
         </div>
     </div>
+    <div class="config-group">
+        <p>Sätze</p>
+        <div class="config-options">
+            <button class="config-option" data-sets="2">Best of 3</button>
+            <button class="config-option selected" data-sets="3">Best of 5</button>
+            <button class="config-option" data-sets="4">Best of 7</button>
+        </div>
+    </div>
+    <button id="btn-apply-settings">Übernehmen</button>
+</div>
 
-    <div class="controls">
-        <button class="btn-plus" onclick="addPoint()">+ Point for me</button>
-        <button class="btn-minus" onclick="removePoint()">- My error</button>
-        <button class="btn-reset" onclick="confirmResetMatch()">Reset Match</button>
+<div id="menu">
+    <button id="btn-menu">☰</button>
+    <div id="menu-dropdown">
+        <button id="btn-settings">Einstellungen</button>
+        <button id="btn-reset">Match zurücksetzen</button>
+        <button id="btn-switch">Seiten tauschen</button>
+        <button id="btn-toggle-server">Aufschlag wechseln</button>
+        <button id="btn-help">Hilfe</button>
     </div>
 </div>
 
-<!-- WINNER SCREEN OVERLAY -->
-<div id="winnerOverlay" class="winner-overlay">
-    <div id="winnerText" class="winner-text">WINNER!</div>
-    <button onclick="closeOverlayAndReset()" style="background-color: #2ecc71; color: white; padding: 20px 40px; width: auto;">Start New Match</button>
+<div id="field" class="playing-field">
+    <div id="side-left" class="side serving">
+        <div class="ball">🏓</div>
+        <div id="sets-p1" class="sets">0</div>
+        <div id="points-p1" class="points">0</div>
+    </div>
+    <div id="side-right" class="side">
+        <div class="ball">🏓</div>
+        <div id="sets-p2" class="sets">0</div>
+        <div id="points-p2" class="points">0</div>
+    </div>
 </div>
 
-<!-- NOTICE BANNER -->
-<div id="backBlockedBanner" style="display:none; position:fixed; top:0; left:0; width:100%; padding:12px; box-sizing:border-box; background-color:#e74c3c; color:white; text-align:center; font-weight:bold; z-index:20;">
-    Back navigation is not possible during the match.
+<div id="overlay" class="fullscreen-overlay">
+    <div id="overlay-text"></div>
+    <button id="btn-new-match">Neues Spiel</button>
 </div>
-<script>
-    let scoreA = 0; let scoreB = 0;
-    let setsA = 0;  let setsB = 0;
-    let nameA = "Player A"; let nameB = "Player B";
-    let matchFinished = false;
-    let myRole = ''; let peer; let conn; let roomCode = ''; let joinUrl = '';
-    let wakeLock = null;
 
-    const ICE_SERVERS = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+<div id="help-screen" class="fullscreen-overlay">
+    <h2>Hilfe</h2>
+    <div class="help-section">
+        <p class="help-title">Touch</p>
+        <p>Antippen der eigenen Seite = +1 Punkt</p>
+        <p>Nach unten wischen = -1 Punkt (Korrektur)</p>
+    </div>
+    <div class="help-section">
+        <p class="help-title">Tastatur</p>
+        <p>A / ← = linke Seite, B / → = rechte Seite</p>
+        <p>Kurz drücken = +1, gedrückt halten (&gt;500ms) = -1</p>
+    </div>
+    <div class="help-section">
+        <p class="help-title">Menü</p>
+        <p>Einstellungen: Punkte pro Satz und Sätze anzahl festlegen</p>
+        <p>Match zurücksetzen: startet das aktuelle Match sofort neu</p>
+        <p>Seiten tauschen: wechselt manuell, welche Seite links/rechts angezeigt wird</p>
+        <p>Aufschlag wechseln: korrigiert manuell, wer aufschlägt</p>
+    </div>
+    <button id="btn-close-help">Schliessen</button>
+</div>
 
-    async function requestWakeLock() {
-        try {
-            if ('wakeLock' in navigator) {
-                wakeLock = await navigator.wakeLock.request('screen');
-            }
-        } catch (err) {}
-    }
-
-    document.addEventListener('visibilitychange', async () => {
-        if (wakeLock !== null && document.visibilityState === 'visible') {
-            await requestWakeLock();
-        }
-    });
-
-    window.addEventListener('load', () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const autoCode = urlParams.get('g');
-
-        if (autoCode) {
-            showJoinScreen(autoCode);
-        }
-    });
-
-    function showStep(stepId) {
-        document.querySelectorAll('.setup-step').forEach(el => el.style.display = 'none');
-        document.getElementById(stepId).style.display = 'flex';
-        document.getElementById('statusText').innerText = '';
-    }
-
-    function showJoinScreen(prefillCode) {
-        showStep('joinScreen');
-        if (prefillCode) {
-            document.getElementById('codeInput').value = prefillCode;
-        }
-    }
-
-    function cancelHostAndGoBack() {
-        if (conn) { conn.close(); conn = null; }
-        if (peer) { peer.destroy(); peer = null; }
-        roomCode = ''; joinUrl = '';
-        showStep('roleChoice');
-    }
-
-    function cancelJoinAndGoBack() {
-        if (peer) { peer.destroy(); peer = null; }
-        document.getElementById('codeInput').value = '';
-        showStep('roleChoice');
-    }
-
-    // Wires up the data channel to an established PeerJS connection (host or guest side)
-    function setupConnection(connection) {
-        conn = connection;
-        conn.on('data', handlePeerData);
-        conn.on('close', () => {
-            alert("The opponent has left the match.");
-            returnToSetup();
-        });
-    }
-
-    function handlePeerData(data) {
-        if (data.error === "game_in_progress") {
-            const status = document.getElementById('statusText');
-            status.innerText = "❌ Access denied: Match already started!";
-            status.style.color = "#e74c3c";
-            conn.close();
-            return;
-        }
-
-        if (data.type === "sync" || data.type === "update") {
-            scoreA = data.scoreA; scoreB = data.scoreB;
-            setsA = data.setsA;   setsB = data.setsB;
-            // Only adopt the name of the OTHER player –
-            // our own, self-entered name stays untouched.
-            if (myRole === 'A') { nameB = data.nameB; } else { nameA = data.nameA; }
-            matchFinished = data.matchFinished;
-
-            if (data.type === "sync") {
-                startGame();
-                sendData(); // immediately mirror back our own (real) name
-            } else {
-                updateDisplay();
-            }
-        }
-    }
-
-    function startHostFlow() {
-        const inputName = document.getElementById('nameInput').value.trim();
-        if(inputName) nameA = inputName;
-        myRole = 'A';
-
-        roomCode = Math.floor(100000 + Math.random() * 900000).toString();
-
-        peer = new Peer("ppc-" + roomCode, { config: ICE_SERVERS });
-
-        peer.on('open', () => {
-            const currentUrl = window.location.href.split('?');
-            joinUrl = `${currentUrl[0]}?g=${roomCode}`;
-
-            // Clears old QR codes if present
-            document.getElementById('qrcode').innerHTML = "";
-
-            // Creates the QR code entirely locally on the device
-            new QRCode(document.getElementById("qrcode"), {
-                text: joinUrl,
-                width: 200,
-                height: 200
-            });
-
-            document.getElementById('roomCodeDisplay').textContent = roomCode;
-
-            showStep('hostScreen');
-            document.getElementById('statusText').innerText = "Waiting for opponent...";
-            document.getElementById('statusText').style.color = "#3498db";
-        });
-
-        peer.on('connection', (incoming) => {
-            if (conn) {
-                // Already paired with an opponent – reject any further join attempts
-                incoming.on('open', () => {
-                    incoming.send({ error: "game_in_progress" });
-                    incoming.close();
-                });
-                return;
-            }
-            setupConnection(incoming);
-        });
-    }
-
-    function submitJoin() {
-        const inputName = document.getElementById('nameInput').value.trim();
-        if(inputName) nameB = inputName;
-
-        const code = document.getElementById('codeInput').value.trim();
-        const status = document.getElementById('statusText');
-        if (!/^\d{6}$/.test(code)) {
-            status.innerText = "❌ Please enter the 6-digit code.";
-            status.style.color = "#e74c3c";
-            return;
-        }
-
-        myRole = 'B';
-        roomCode = code;
-        status.innerText = "Connecting...";
-        status.style.color = "#3498db";
-
-        joinGame("ppc-" + code);
-    }
-
-    function joinGame(hostId) {
-        peer = new Peer({ config: ICE_SERVERS });
-
-        peer.on('open', () => {
-            const connection = peer.connect(hostId);
-            connection.on('open', () => {
-                setupConnection(connection);
-                conn.send({
-                    type: "sync",
-                    nameA, nameB, scoreA, scoreB, setsA, setsB, matchFinished
-                });
-                startGame();
-            });
-        });
-
-        peer.on('error', (err) => {
-            const status = document.getElementById('statusText');
-            status.innerText = err.type === 'peer-unavailable'
-                ? "❌ Match not found. Check the code."
-                : "❌ Connection error.";
-            status.style.color = "#e74c3c";
-            if (peer) { peer.destroy(); peer = null; }
-        });
-    }
-
-    async function shareJoinLink() {
-        if (navigator.share) {
-            try {
-                await navigator.share({
-                    title: 'Rallyboard',
-                    text: `Join my Rallyboard match — code: ${roomCode}`,
-                    url: joinUrl
-                });
-            } catch (err) {}
-        } else {
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(joinUrl);
-            }
-            alert("Sharing is not supported on this device. The link was copied to the clipboard instead.");
-        }
-    }
-
-    function returnToSetup() {
-        if (conn) { conn.close(); conn = null; }
-        if (peer) { peer.destroy(); peer = null; }
-        scoreA = 0; scoreB = 0; setsA = 0; setsB = 0; matchFinished = false;
-        nameA = "Player A"; nameB = "Player B";
-        myRole = ''; roomCode = ''; joinUrl = '';
-
-        document.getElementById('winnerOverlay').style.display = 'none';
-        document.getElementById('gameScreen').style.display = 'none';
-        document.getElementById('setupScreen').style.display = 'flex';
-
-        document.getElementById('nameInput').value = '';
-        document.getElementById('codeInput').value = '';
-        showStep('roleChoice');
-    }
-
-    function startGame() {
-        document.getElementById('setupScreen').style.display = 'none';
-        document.getElementById('gameScreen').style.display = 'flex';
-        requestWakeLock();
-        updateDisplay();
-        for (let i = 0; i < 20; i++) {
-            history.pushState({ppcGame: true}, '', '');
-        }
-    }
-
-    let backBlockedTimeout = null;
-
-    function showBackBlockedBanner() {
-        const banner = document.getElementById('backBlockedBanner');
-        banner.style.display = 'block';
-        clearTimeout(backBlockedTimeout);
-        backBlockedTimeout = setTimeout(() => { banner.style.display = 'none'; }, 2000);
-    }
-
-    window.addEventListener('popstate', () => {
-        const inGame = document.getElementById('gameScreen').style.display === 'flex';
-        if (inGame) {
-            history.pushState({ppcGame: true}, '', '');
-            showBackBlockedBanner();
-        }
-    });
-
-    function checkSetAndMatchProgress() {
-        if (scoreA >= 11 && (scoreA - scoreB) >= 2) {
-            setsA++; scoreA = 0; scoreB = 0;
-        } else if (scoreB >= 11 && (scoreB - scoreA) >= 2) {
-            setsB++; scoreA = 0; scoreB = 0;
-        }
-        if (setsA === 3 || setsB === 3) {
-            matchFinished = true;
-        }
-    }
-
-    function addPoint() {
-        if (matchFinished) return;
-        if (myRole === 'A') scoreA++;
-        else scoreB++;
-        checkSetAndMatchProgress();
-        sendData();
-    }
-
-    function removePoint() {
-        if (matchFinished) return;
-        if (myRole === 'A' && scoreA > 0) scoreA--;
-        else if (myRole === 'B' && scoreB > 0) scoreB--;
-        sendData();
-    }
-
-    function confirmResetMatch() {
-        if (confirm("Really reset the match?")) {
-            resetFullMatch();
-        }
-    }
-
-    function resetFullMatch() {
-        scoreA = 0; scoreB = 0; setsA = 0; setsB = 0; matchFinished = false;
-        sendData();
-    }
-
-    function closeOverlayAndReset() {
-        document.getElementById('winnerOverlay').style.display = 'none';
-        resetFullMatch();
-    }
-
-    function sendData() {
-        updateDisplay();
-        if (conn && conn.open) {
-            conn.send({
-                type: "update",
-                nameA, nameB, scoreA, scoreB, setsA, setsB, matchFinished
-            });
-        }
-    }
-
-    function updateDisplay() {
-        document.getElementById('nameA').innerText = nameA + (myRole === 'A' ? " (Me)" : "");
-        document.getElementById('nameB').innerText = nameB + (myRole === 'B' ? " (Me)" : "");
-        document.getElementById('scoreA').innerText = scoreA;
-        document.getElementById('scoreB').innerText = scoreB;
-        document.getElementById('setsA').innerText = `Sets: ${setsA}`;
-        document.getElementById('setsB').innerText = `Sets: ${setsB}`;
-
-        const totalPoints = scoreA + scoreB;
-        let isPlayerAServing = true;
-        if (scoreA >= 10 && scoreB >= 10) {
-            isPlayerAServing = (totalPoints % 2 === 0);
-        } else {
-            isPlayerAServing = (Math.floor(totalPoints / 2) % 2 === 0);
-        }
-
-        if (isPlayerAServing) {
-            document.getElementById('serviceA').innerText = "🏓"; document.getElementById('serviceB').innerText = "";
-            document.getElementById('boxA').classList.add('serving'); document.getElementById('boxB').classList.remove('serving');
-        } else {
-            document.getElementById('serviceA').innerText = ""; document.getElementById('serviceB').innerText = "🏓";
-            document.getElementById('boxA').classList.remove('serving'); document.getElementById('boxB').classList.add('serving');
-        }
-
-        const overlay = document.getElementById('winnerOverlay');
-        if (matchFinished) {
-            const text = document.getElementById('winnerText');
-            const winnerName = setsA === 3 ? nameA : nameB;
-            text.innerText = `🏆 MATCH OVER 🏆\n${winnerName} wins the match ${setsA}:${setsB}!`;
-            overlay.style.display = 'flex';
-        } else {
-            overlay.style.display = 'none';
-        }
-    }
-</script>
+<script src="script.js"></script>
 </body>
 </html>
