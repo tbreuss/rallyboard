@@ -7,6 +7,8 @@
     --side-left-fg: #63b3ed;
     --side-right-bg: #742a2a;
     --side-right-fg: #fc8181;
+    --ball-inset: max(16px, 3vmin);
+    --ball-size: max(32px, 8vmin);
 }
 * {
     box-sizing: border-box;
@@ -25,9 +27,9 @@ body, html {
 }
 #menu {
     position: fixed;
-    top: max(10px, env(safe-area-inset-top));
+    top: 50%;
     left: 50%;
-    transform: translateX(-50%);
+    transform: translate(-50%, -50%);
     z-index: 999;
 }
 #menu button {
@@ -65,31 +67,38 @@ body, html {
 #menu-dropdown button { white-space: nowrap; }
 .playing-field {
     display: flex;
-    width: 100vw;
-    height: 100vh;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    height: 100dvh;
     transition: flex-direction 0.3s ease;
+}
+.playing-field.reversed {
+    flex-direction: column-reverse;
 }
 .side {
     flex: 1;
-    height: 100%;
+    min-height: 0;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     position: relative;
+    overflow: hidden;
 }
 #side-left { background-color: var(--side-left-bg); color: var(--side-left-fg); }
 #side-right { background-color: var(--side-right-bg); color: var(--side-right-fg); }
 
 .sets {
-    font-size: 6vh;
+    font-size: 5vh;
     color: #fff;
-    margin-bottom: -2vh;
+    margin-bottom: -1.5vh;
     font-weight: bold;
     font-variant-numeric: tabular-nums;
 }
 .points {
-    font-size: 38vh;
+    font-size: 28vh;
     font-weight: bold;
     line-height: 1;
     font-variant-numeric: tabular-nums;
@@ -103,13 +112,60 @@ body, html {
     100% { transform: scale(1); }
 }
 .ball {
-    font-size: 6vh;
+    font-size: var(--ball-size);
+    line-height: 1;
+    width: 1em;
+    height: 1em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     position: absolute;
-    top: 6vh;
+    top: auto;
+    right: auto;
+    bottom: auto;
+    left: auto;
     opacity: 0;
+    pointer-events: none;
+}
+.playing-field:not(.reversed) #side-left .ball,
+.playing-field.reversed #side-right .ball {
+    top: calc(var(--ball-inset) + env(safe-area-inset-top, 0px));
+    left: calc(var(--ball-inset) + env(safe-area-inset-left, 0px));
+}
+.playing-field:not(.reversed) #side-right .ball,
+.playing-field.reversed #side-left .ball {
+    top: calc(var(--ball-inset) + env(safe-area-inset-top, 0px));
+    right: calc(var(--ball-inset) + env(safe-area-inset-right, 0px));
+    transform: scaleX(-1);
+}
+@media (orientation: portrait) {
+    .playing-field:not(.reversed) #side-right .ball,
+    .playing-field.reversed #side-left .ball {
+        top: var(--ball-inset);
+    }
 }
 .serving .ball {
     opacity: 1;
+}
+
+@media (orientation: landscape) {
+    #menu {
+        top: max(10px, env(safe-area-inset-top));
+        transform: translateX(-50%);
+    }
+    .playing-field {
+        flex-direction: row;
+    }
+    .playing-field.reversed {
+        flex-direction: row-reverse;
+    }
+    .sets {
+        font-size: min(10vh, 6vw);
+        margin-bottom: -2vh;
+    }
+    .points {
+        font-size: min(68vh, 36vw);
+    }
 }
 .fullscreen-overlay {
     display: none;

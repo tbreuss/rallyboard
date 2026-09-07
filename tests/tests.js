@@ -163,15 +163,15 @@ QUnit.module("swapSides()", hooks => {
         reset();
     });
 
-    QUnit.test("toggles direction and the field's flex-direction", assert => {
+    QUnit.test("toggles direction and the field's reversed class", assert => {
         assert.strictEqual(direction, "normal");
         swapSides();
         assert.strictEqual(direction, "reversed");
-        assert.strictEqual(document.getElementById("field").style.flexDirection, "row-reverse");
+        assert.true(document.getElementById("field").classList.contains("reversed"));
 
         swapSides();
         assert.strictEqual(direction, "normal");
-        assert.strictEqual(document.getElementById("field").style.flexDirection, "row");
+        assert.false(document.getElementById("field").classList.contains("reversed"));
     });
 });
 

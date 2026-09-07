@@ -96,10 +96,10 @@ function toggleServer() {
 function swapSides() {
     const field = document.getElementById("field");
     if (direction === "normal") {
-        field.style.flexDirection = "row-reverse";
+        field.classList.add("reversed");
         direction = "reversed";
     } else {
-        field.style.flexDirection = "row";
+        field.classList.remove("reversed");
         direction = "normal";
     }
 }
@@ -161,7 +161,7 @@ function reset() {
     document.getElementById("btn-toggle-server").disabled = false;
     document.getElementById("btn-reset").disabled = false;
     document.getElementById("btn-switch").disabled = false;
-    document.getElementById("field").style.flexDirection = "row";
+    document.getElementById("field").classList.remove("reversed");
     document.getElementById("points-p1").innerText = 0;
     document.getElementById("points-p2").innerText = 0;
     document.getElementById("sets-p1").innerText = 0;
