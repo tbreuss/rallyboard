@@ -310,3 +310,46 @@ QUnit.module("help screen", hooks => {
         assert.false(document.getElementById("help-screen").classList.contains("active"));
     });
 });
+
+QUnit.module("speech on manual corrections", hooks => {
+    let spoken;
+
+    hooks.beforeEach(() => {
+        pointsToWin = 11;
+        setsToWin = 3;
+        spoken = [];
+        window.__onSpeak = text => spoken.push(text);
+        reset();
+        spoken.length = 0; // drop reset()'s "Neues Spiel"
+    });
+
+    hooks.afterEach(() => {
+        delete window.__onSpeak;
+    });
+
+    QUnit.test("menu Seiten tauschen announces the swap without repeating the score", assert => {
+        document.getElementById("btn-switch").click();
+        assert.deepEqual(spoken, ["Seiten gewechselt"]);
+    });
+
+    QUnit.test("automatic side swap after a set does not add Seiten gewechselt", assert => {
+        for (let i = 0; i < 11; i++) update("p1", 1);
+        assert.true(spoken.includes("Satzgewinn Links. Seiten wechseln."));
+        assert.false(spoken.includes("Seiten gewechselt"));
+    });
+
+    QUnit.test("toggleServer() announces the visual serving side", assert => {
+        toggleServer();
+        assert.deepEqual(spoken, ["Aufschlag rechts"]);
+        spoken.length = 0;
+        toggleServer();
+        assert.deepEqual(spoken, ["Aufschlag links"]);
+    });
+
+    QUnit.test("toggleServer() follows the visual side after a swap", assert => {
+        swapSides();
+        spoken.length = 0;
+        toggleServer();
+        assert.deepEqual(spoken, ["Aufschlag links"]);
+    });
+});

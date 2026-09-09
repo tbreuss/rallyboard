@@ -91,6 +91,7 @@ function newSet(winner) {
 function toggleServer() {
     serverFlip = !serverFlip;
     calculateServer();
+    announceServer();
 }
 
 function swapSides() {
@@ -137,7 +138,13 @@ function announce() {
     }
 }
 
+function announceServer() {
+    const visualLeft = (direction === "normal") ? "p1" : "p2";
+    speak(server === visualLeft ? "Aufschlag links" : "Aufschlag rechts");
+}
+
 function speak(text) {
+    if (typeof window.__onSpeak === "function") window.__onSpeak(text);
     if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
         // Chromium bug: cancel() immediately followed by speak() leaves the
@@ -227,6 +234,7 @@ document.getElementById("btn-switch").addEventListener('click', (e) => {
     e.stopPropagation();
     document.getElementById("menu-dropdown").classList.remove("active");
     swapSides();
+    speak("Seiten gewechselt");
 });
 document.getElementById("btn-toggle-server").addEventListener('click', (e) => {
     e.stopPropagation();
