@@ -6,11 +6,14 @@ Ein Punktezähler für Tischtennis auf **einem** geteilten Bildschirm – kein N
 
 `index.html` ist eine einzelne, statische Seite (kein Build, kein Backend) mit:
 
-- geteiltem Bildschirm (links/rechts), je eine Hälfte pro Spieler,
-- Punktezählung nach Tischtennis-Regeln (11 Punkte pro Satz, 2 Punkte Vorsprung nötig; Aufschlagwechsel alle 2 Punkte, ab 10:10 nach jedem Punkt),
+- geteiltem Bildschirm, je eine Hälfte pro Spieler: im Hochformat oben/unten, im Querformat links/rechts,
+- Punktezählung nach Tischtennis-Regeln (11 oder 21 Punkte pro Satz, 2 Punkte Vorsprung nötig; Aufschlagwechsel alle 2 bzw. 5 Punkte, im Einstand nach jedem Punkt),
+- einstellbarem Match-Modus (Best of 3 / 5 / 7),
 - automatischem Seitenwechsel nach jedem Satz (ITTF-Regel 2.11),
-- deutscher Sprachansage des Punktestands nach jedem Punkt (`SpeechSynthesis`),
-- Sieger-Overlay nach 3 gewonnenen Sätzen mit Endstand und "Neues Spiel"-Button; alle anderen Eingaben sind dann gesperrt.
+- deutscher Sprachansage (`SpeechSynthesis`),
+- Sieger-Overlay mit Endstand und **Neues Spiel**-Button; Zählen, Seiten tauschen und Aufschlag wechseln sind dann gesperrt.
+
+Einstellungen (Punkte pro Satz, Anzahl der Sätze) bleiben im `localStorage` erhalten. Die App hat ein Web-App-Manifest und lässt sich auf dem Home-Bildschirm starten (`orientation: any`).
 
 ## Bedienung
 
@@ -19,14 +22,32 @@ Ein Punktezähler für Tischtennis auf **einem** geteilten Bildschirm – kein N
 - Nach unten wischen = **-1 Punkt** (Korrektur)
 
 **Tastatur (Desktop):**
-- **A** / **←** = linke Bildschirmhälfte, **B** / **→** = rechte Bildschirmhälfte
+- **A** / **←** = linke Hälfte (im Hochformat: obere), **B** / **→** = rechte Hälfte (im Hochformat: untere)
 - Kurz drücken = **+1 Punkt**, gedrückt halten (>500ms) und loslassen = **-1 Punkt**
 
-Die Tasten-/Touch-Zuordnung folgt immer der **aktuell angezeigten** Seite – nach einem automatischen Seitenwechsel steuert z.B. die linke Pfeiltaste weiterhin den Spieler, dessen Box gerade links zu sehen ist.
+Tastatur und Touch folgen der **aktuell angezeigten** Hälfte. Nach einem Seitenwechsel steuert z.B. **A** / **←** weiterhin den Spieler, dessen Box gerade links bzw. oben liegt.
 
-**Menü (oben):**
-- **Reset** – setzt das laufende Match sofort zurück
-- **Tauschen** – wechselt die Seiten manuell
+**Menü** (im Querformat oben an der Trennlinie, im Hochformat in der Mitte):
+- **Einstellungen** – Punkte pro Satz (11 / 21) und Sätze (Best of 3 / 5 / 7); Übernehmen startet das Match neu
+- **Match zurücksetzen** – setzt das laufende Match sofort zurück (Ansage: „Neues Spiel“)
+- **Seiten tauschen** – wechselt manuell, welche Hälfte wo angezeigt wird (Ansage: „Seiten gewechselt“)
+- **Aufschlag wechseln** – korrigiert, wer aufschlägt (Ansage: „Aufschlag links“ oder „Aufschlag rechts“ – linke/obere bzw. rechte/untere Hälfte)
+- **Hilfe** – Kurzanleitung in der App
+
+## Sprache
+
+| Ereignis | Ansage |
+|---|---|
+| Punkt | Stand in Anzeige-Reihenfolge, z.B. „3 zu 2“ |
+| Satzgewinn | „Satzgewinn Links/Rechts. Seiten wechseln.“ |
+| Match-Ende | „Match vorbei! Sieg für Links/Rechts“ |
+| Match zurücksetzen / Neues Spiel | „Neues Spiel“ |
+| Seiten tauschen (Menü) | „Seiten gewechselt“ |
+| Aufschlag wechseln (Menü) | „Aufschlag links“ / „Aufschlag rechts“ |
+
+„Links“/„Rechts“ bei Satzgewinn und Sieg bezeichnen die beiden Spieler (die ursprünglich linke bzw. rechte Seite), unabhängig vom letzten Tausch. Die Aufschlag-Ansage folgt der **sichtbaren** Hälfte.
+
+Der automatische Aufschlagwechsel nach Punkten wird nicht extra angesagt – nur der neue Stand.
 
 ## Setup
 
@@ -37,6 +58,10 @@ python3 -m http.server 8000
 ```
 
 dann die Seite auf dem Gerät öffnen, das zwischen den Spielern liegt.
+
+## Tests
+
+QUnit-Tests liegen unter `tests/index.html` (gleiche Origin wie die App, Settings in `localStorage` werden von den Tests gesichert und wiederhergestellt).
 
 ## Bekannte Einschränkung
 
