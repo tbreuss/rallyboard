@@ -166,19 +166,46 @@ body, html {
     .points {
         font-size: min(68vh, 36vw);
     }
+    .fullscreen-overlay {
+        gap: 16px;
+    }
 }
 .fullscreen-overlay {
     display: none;
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
     color: #fff;
     z-index: 2000;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 30px;
+    gap: 24px;
     text-align: center;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
 }
 .fullscreen-overlay.active { display: flex; }
+.fullscreen-overlay.active::before,
+.fullscreen-overlay.active::after {
+    content: "";
+    flex: 1 1 0;
+    min-height: 0;
+    width: 100%;
+    pointer-events: none;
+}
+.fullscreen-overlay.active > * {
+    flex-shrink: 0;
+}
+.fullscreen-overlay.active,
+.fullscreen-overlay.active * {
+    touch-action: pan-y;
+}
 #config-screen { background: #000; }
 .config-group { display: flex; flex-direction: column; align-items: center; gap: 12px; }
 .config-group p { font-size: 14px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
@@ -214,8 +241,6 @@ body, html {
 #overlay-text { font-size: 6vh; font-weight: bold; padding: 0 20px; }
 #help-screen {
     background: #000;
-    padding: 20px;
-    overflow-y: auto;
 }
 .help-section { max-width: 400px; }
 .help-title {
