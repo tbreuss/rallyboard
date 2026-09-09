@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ping Pong Counter – Tests</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/qunit/2.20.1/qunit.min.css">
+</head>
+<body>
+<div id="qunit"></div>
+<div id="qunit-fixture"></div>
+
+<!-- Real game markup so script.js's DOM lookups/listeners work as in the app -->
+<div id="config-screen">
+    <div class="config-group">
+        <div class="config-options">
+            <button class="config-option selected" data-points="11">11</button>
+            <button class="config-option" data-points="21">21</button>
+        </div>
+    </div>
+    <div class="config-group">
+        <div class="config-options">
+            <button class="config-option" data-sets="2">Best of 3</button>
+            <button class="config-option selected" data-sets="3">Best of 5</button>
+            <button class="config-option" data-sets="4">Best of 7</button>
+        </div>
+    </div>
+    <button id="btn-apply-settings">Übernehmen</button>
+</div>
+
+<div id="menu">
+    <button id="btn-menu">☰</button>
+    <div id="menu-dropdown">
+        <button id="btn-settings">Einstellungen</button>
+        <button id="btn-reset">Match zurücksetzen</button>
+        <button id="btn-switch">Seiten tauschen</button>
+        <button id="btn-toggle-server">Aufschlag wechseln</button>
+        <button id="btn-help">Hilfe</button>
+    </div>
+</div>
+
+<div id="field" class="playing-field">
+    <div id="side-left" class="side serving">
+        <div class="ball">🏓</div>
+        <div id="sets-p1" class="sets">0</div>
+        <div id="points-p1" class="points">0</div>
+    </div>
+    <div id="side-right" class="side">
+        <div class="ball">🏓</div>
+        <div id="sets-p2" class="sets">0</div>
+        <div id="points-p2" class="points">0</div>
+    </div>
+</div>
+
+<div id="overlay">
+    <div id="overlay-text"></div>
+    <button id="btn-new-match">Neues Spiel</button>
+</div>
+
+<div id="help-screen">
+    <button id="btn-close-help">Schliessen</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qunit/2.20.1/qunit.min.js"></script>
+<script src="../script.js"></script>
+<script src="tests.js"></script>
+</body>
+</html>

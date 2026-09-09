@@ -1,42 +1,68 @@
-# 🏓 Rallyboard
+# 🏓 Ping Pong Pro Zähler
 
-A live table tennis scoreboard for two players on two separate devices (e.g. two phones, or a phone and a laptop), synced in real time peer-to-peer via WebRTC.
+Ein Punktezähler für Tischtennis auf **einem** geteilten Bildschirm – kein Netzwerk, keine zweite Verbindung, kein Server. Zwei Spieler stehen/sitzen sich an einem Gerät gegenüber, jede Bildschirmhälfte gehört einem Spieler.
 
-## How it works
+## Funktionsweise
 
-`index.html` is a single, static, self-contained page (vanilla JS, no build step, no backend) that:
+`index.html` ist eine einzelne, statische Seite (kein Build, kein Backend) mit:
 
-- lets the first player start a match, generating a QR code, a shareable link, and a 6-digit code for the opponent to join,
-- lets the second player join by scanning the QR code, opening the link, or just typing in the 6-digit code — each connects directly to the first player's device over a [PeerJS](https://peerjs.com/) (WebRTC) data channel,
-- tracks score, sets, and serve order locally per device and broadcasts every change to the other device directly over that peer-to-peer connection,
-- shows a winner overlay 🏆 once a player wins 3 sets (11 points per set, win by 2),
-- keeps the screen awake during a match (Screen Wake Lock API) and makes a best-effort attempt to block accidental back-navigation while a match is active.
+- geteiltem Bildschirm, je eine Hälfte pro Spieler: im Hochformat oben/unten, im Querformat links/rechts,
+- Punktezählung nach Tischtennis-Regeln (11 oder 21 Punkte pro Satz, 2 Punkte Vorsprung nötig; Aufschlagwechsel alle 2 bzw. 5 Punkte, im Einstand nach jedem Punkt),
+- einstellbarem Match-Modus (Best of 3 / 5 / 7),
+- automatischem Seitenwechsel nach jedem Satz (ITTF-Regel 2.11),
+- deutscher Sprachansage (`SpeechSynthesis`),
+- Sieger-Overlay mit Endstand und **Neues Spiel**-Button; Zählen, Seiten tauschen und Aufschlag wechseln sind dann gesperrt.
 
-There is no custom server to run: PeerJS's free public broker (`0.peerjs.com`) is used only briefly, to help the two devices find each other and establish the initial WebRTC connection. Once connected, all match data (scores, names, match state) flows directly between the two devices — the broker never sees it.
+Einstellungen (Punkte pro Satz, Anzahl der Sätze) bleiben im `localStorage` erhalten. Die App hat ein Web-App-Manifest und lässt sich auf dem Home-Bildschirm starten (`orientation: any`).
 
-## Requirements
+## Bedienung
 
-- Both devices need a working internet connection at the moment of pairing (to reach the public PeerJS broker), even if they're on the same local network.
-- A way to serve `index.html` so both devices can open the exact same URL (any static file host works — e.g. GitHub Pages, Netlify, or a simple local static server).
+**Touch (Smartphone/Tablet):**
+- Kurzes Antippen der eigenen Bildschirmhälfte = **+1 Punkt**
+- Nach unten wischen = **-1 Punkt** (Korrektur)
+
+**Tastatur (Desktop):**
+- **A** / **←** = linke Hälfte (im Hochformat: obere), **B** / **→** = rechte Hälfte (im Hochformat: untere)
+- Kurz drücken = **+1 Punkt**, gedrückt halten (>500ms) und loslassen = **-1 Punkt**
+
+Tastatur und Touch folgen der **aktuell angezeigten** Hälfte. Nach einem Seitenwechsel steuert z.B. **A** / **←** weiterhin den Spieler, dessen Box gerade links bzw. oben liegt.
+
+**Menü** (im Querformat oben an der Trennlinie, im Hochformat in der Mitte):
+- **Einstellungen** – Punkte pro Satz (11 / 21) und Sätze (Best of 3 / 5 / 7); Übernehmen startet das Match neu
+- **Match zurücksetzen** – setzt das laufende Match sofort zurück (Ansage: „Neues Spiel“)
+- **Seiten tauschen** – wechselt manuell, welche Hälfte wo angezeigt wird (Ansage: „Seiten gewechselt“)
+- **Aufschlag wechseln** – korrigiert, wer aufschlägt (Ansage: „Aufschlag links“ oder „Aufschlag rechts“ – linke/obere bzw. rechte/untere Hälfte)
+- **Hilfe** – Kurzanleitung in der App
+
+## Sprache
+
+| Ereignis | Ansage |
+|---|---|
+| Punkt | Stand in Anzeige-Reihenfolge, z.B. „3 zu 2“ |
+| Satzgewinn | „Satzgewinn Links/Rechts. Seiten wechseln.“ |
+| Match-Ende | „Match vorbei! Sieg für Links/Rechts“ |
+| Match zurücksetzen / Neues Spiel | „Neues Spiel“ |
+| Seiten tauschen (Menü) | „Seiten gewechselt“ |
+| Aufschlag wechseln (Menü) | „Aufschlag links“ / „Aufschlag rechts“ |
+
+„Links“/„Rechts“ bei Satzgewinn und Sieg bezeichnen die beiden Spieler (die ursprünglich linke bzw. rechte Seite), unabhängig vom letzten Tausch. Die Aufschlag-Ansage folgt der **sichtbaren** Hälfte.
+
+Der automatische Aufschlagwechsel nach Punkten wird nicht extra angesagt – nur der neue Stand.
 
 ## Setup
 
-No installation or build step — `index.html` is the entire app. Just make it reachable at one URL both devices can open, for example:
+Kein Build, keine Abhängigkeiten – `index.html` ist die ganze App. Lokal reicht ein beliebiger statischer Server, z.B.:
 
 ```bash
 python3 -m http.server 8000
 ```
 
-then open that URL in a browser on each device.
+dann die Seite auf dem Gerät öffnen, das zwischen den Spielern liegt.
 
-## Usage
+## Tests
 
-1. Player A opens the page, enters their name, and taps **Start Match**.
-2. Player B opens the page, enters their name, taps **Join Match**, and either scans the displayed QR code / opens the shared link, or just types in the 6-digit code shown under it.
-3. Both devices now show the live scoreboard — each player taps **+ Point for me** / **- My error** on their own device to update the score, which is instantly mirrored on the other device.
-4. The match ends automatically once one player wins 3 sets; **Reset Match** starts a fresh match with the same opponent.
+QUnit-Tests liegen unter `tests/index.html` (gleiche Origin wie die App, Settings in `localStorage` werden von den Tests gesichert und wiederhergestellt).
 
-## Notes
+## Bekannte Einschränkung
 
-- Pairing has no authentication — anyone with the join link/QR code can connect as the second player, as long as they reach it before someone else does.
-- There is no reconnect logic: if the peer-to-peer connection drops mid-match, the match cannot resync automatically (see `CODE_REVIEW.md` for known limitations from an earlier version of this app; most still apply conceptually to the WebRTC version).
+Die Sprachausgabe (`SpeechSynthesis`) funktioniert nachweislich **nicht in Brave** (Browser-spezifischer Bug in Braves Speech-Engine, kein Fehler in dieser App) – getestet und bestätigt in Chrome und Safari. Für die Sprachansage bitte einen anderen Browser als Brave verwenden.
